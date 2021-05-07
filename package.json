@@ -6,19 +6,12 @@
   "publishConfig": {
     "access": "public"
   },
-  "release": {
-    "publish": ["@semantic-release/github"],
-    "branches": [
-      "development",
-      "next"
-    ]
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ChainSafe/gossamer.git"
+    "url": "git+https://github.com/timwu20/gossamer.git"
   },
   "bugs": {
-    "url": "https://github.com/ChainSafe/gossamer/issues"
+    "url": "https://github.com/timwu20/gossamer/issues"
   },
-  "homepage": "https://github.com/ChainSafe/gossamer"
+  "homepage": "https://github.com/timwu20/gossamer"
 }
