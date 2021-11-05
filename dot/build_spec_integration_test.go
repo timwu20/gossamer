@@ -31,6 +31,8 @@ import (
 )
 
 func TestBuildFromGenesis(t *testing.T) {
+	t.Parallel()
+
 	file, err := genesis.CreateTestGenesisJSONFile(false)
 	defer os.Remove(file)
 	require.NoError(t, err)
@@ -72,12 +74,16 @@ func TestBuildFromGenesis(t *testing.T) {
 }
 
 func TestBuildFromGenesis_WhenGenesisDoesNotExists(t *testing.T) {
+	t.Parallel()
+
 	bs, err := BuildFromGenesis("/not/exists/genesis.json", 0)
 	require.Nil(t, bs)
 	require.Error(t, err, os.ErrNotExist)
 }
 
 func TestWriteGenesisSpecFileWhenFileAlreadyExists(t *testing.T) {
+	t.Parallel()
+
 	f, err := ioutil.TempFile("", "existing file data")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
@@ -90,6 +96,8 @@ func TestWriteGenesisSpecFileWhenFileAlreadyExists(t *testing.T) {
 }
 
 func TestWriteGenesisSpecFile(t *testing.T) {
+	t.Parallel()
+
 	cfg := NewTestConfig(t)
 	cfg.Init.Genesis = "../chain/gssmr/genesis.json"
 
@@ -134,6 +142,8 @@ func TestWriteGenesisSpecFile(t *testing.T) {
 }
 
 func TestBuildFromDB(t *testing.T) {
+	t.Parallel()
+
 	// setup expected
 	cfg := NewTestConfig(t)
 	cfg.Init.Genesis = "../chain/gssmr/genesis.json"
