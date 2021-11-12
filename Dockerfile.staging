@@ -16,6 +16,9 @@ WORKDIR /gossamer
 
 COPY . .
 
+RUN ls -la
+RUN la -la .github/
+
 RUN ["sh", "-c", "mv .github/workflows/staging/openmetrics.d/${chain}-conf.yaml /etc/datadog-agent/conf.d/openmetrics.d/conf.yaml"]
 RUN ls -la /etc/datadog-agent/conf.d/openmetrics.d/
 RUN cat /etc/hosts
