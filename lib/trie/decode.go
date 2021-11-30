@@ -25,7 +25,7 @@ func decodeNode(reader io.Reader) (n node.Node, err error) {
 		return nil, fmt.Errorf("%w: %s", ErrReadHeaderByte, err)
 	}
 
-	nodeType := header >> 6
+	nodeType := node.Type(header >> 6)
 	switch nodeType {
 	case node.LeafType:
 		n, err = leaf.Decode(reader, header)
