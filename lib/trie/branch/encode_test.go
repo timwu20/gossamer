@@ -146,7 +146,7 @@ func Test_Branch_Encode(t *testing.T) {
 			wrappedErr: errTest,
 			errMessage: "cannot write encoded value to buffer: test error",
 		},
-		"buffer write error for children encoded sequentially": {
+		"buffer write error for children encoding": {
 			branch: &Branch{
 				Key:   []byte{1, 2, 3},
 				Value: []byte{100},
@@ -175,10 +175,10 @@ func Test_Branch_Encode(t *testing.T) {
 			},
 			wrappedErr: errTest,
 			errMessage: "cannot encode children of branch: " +
-				"cannot encode child at index 3: " +
-				"failed to write child to buffer: test error",
+				"cannot write encoding of child at index 3: " +
+				"test error",
 		},
-		"success with sequential children encoding": {
+		"success with children encoding": {
 			branch: &Branch{
 				Key:   []byte{1, 2, 3},
 				Value: []byte{100},
@@ -241,7 +241,7 @@ func Test_Branch_Encode(t *testing.T) {
 	}
 }
 
-func Test_encodeChildrenInParallel(t *testing.T) {
+func Test_encodeChildrenOpportunisticParallel(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -329,7 +329,7 @@ func Test_encodeChildrenInParallel(t *testing.T) {
 				previousCall = call
 			}
 
-			err := encodeChildrenInParallel(testCase.children, buffer)
+			err := encodeChildrenOpportunisticParallel(testCase.children, buffer)
 
 			if testCase.wrappedErr != nil {
 				assert.ErrorIs(t, err, testCase.wrappedErr)
