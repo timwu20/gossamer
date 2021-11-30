@@ -10,6 +10,7 @@ import (
 
 	"github.com/ChainSafe/gossamer/lib/trie/decode"
 	"github.com/ChainSafe/gossamer/lib/trie/leaf"
+	"github.com/ChainSafe/gossamer/lib/trie/node"
 	"github.com/ChainSafe/gossamer/pkg/scale"
 )
 
@@ -27,8 +28,10 @@ var (
 // children are known to be with an empty leaf. The children nodes hashes are then used to
 // find other values using the persistent database.
 func Decode(reader io.Reader, header byte) (branch *Branch, err error) {
-	nodeType := header >> 6
-	if nodeType != 2 && nodeType != 3 {
+	nodeType := node.Type(header >> 6)
+	switch nodeType {
+	case node.BranchType, node.BranchWithValueType:
+	default:
 		return nil, fmt.Errorf("%w: %d", ErrNodeTypeIsNotABranch, nodeType)
 	}
 
@@ -48,7 +51,7 @@ func Decode(reader io.Reader, header byte) (branch *Branch, err error) {
 
 	sd := scale.NewDecoder(reader)
 
-	if nodeType == 3 {
+	if nodeType == node.BranchWithValueType {
 		var value []byte
 		// branch w/ value
 		err := sd.Decode(&value)

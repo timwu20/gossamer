@@ -3,15 +3,18 @@
 
 package branch
 
-import "github.com/ChainSafe/gossamer/lib/trie/encode"
+import (
+	"github.com/ChainSafe/gossamer/lib/trie/encode"
+	"github.com/ChainSafe/gossamer/lib/trie/node"
+)
 
 // Header creates the encoded header for the branch.
 func (b *Branch) Header() (encoding []byte, err error) {
 	var header byte
 	if b.Value == nil {
-		header = 2 << 6
+		header = byte(node.BranchType) << 6
 	} else {
-		header = 3 << 6
+		header = byte(node.BranchWithValueType) << 6
 	}
 
 	var encodedPublicKeyLength []byte
