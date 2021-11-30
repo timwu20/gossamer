@@ -50,8 +50,10 @@ func (t *Trie) store(db chaindb.Batch, curr node.Node) error {
 		return err
 	}
 
-	if c, ok := curr.(*branch.Branch); ok {
-		for _, child := range c.Children {
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+		branch := curr.(*branch.Branch)
+		for _, child := range branch.Children {
 			if child == nil {
 				continue
 			}
@@ -108,10 +110,13 @@ func (t *Trie) LoadFromProof(proof [][]byte, root []byte) error {
 // loadProof is a recursive function that will create all the trie paths based
 // on the mapped proofs slice starting by the root
 func (t *Trie) loadProof(proof map[string]node.Node, curr node.Node) {
-	c, ok := curr.(*branch.Branch)
-	if !ok {
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+	default:
 		return
 	}
+
+	c := curr.(*branch.Branch)
 
 	for i, child := range c.Children {
 		if child == nil {
@@ -153,31 +158,37 @@ func (t *Trie) Load(db chaindb.Database, root common.Hash) error {
 }
 
 func (t *Trie) load(db chaindb.Database, curr node.Node) error {
-	if c, ok := curr.(*branch.Branch); ok {
-		for i, child := range c.Children {
-			if child == nil {
-				continue
-			}
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+	default: // not a branch
+		return nil
+	}
 
-			hash := child.GetHash()
-			enc, err := db.Get(hash)
-			if err != nil {
-				return fmt.Errorf("failed to find node key=%x index=%d: %w", hash, i, err)
-			}
+	c := curr.(*branch.Branch)
 
-			child, err = decodeNode(bytes.NewBuffer(enc))
-			if err != nil {
-				return err
-			}
+	for i, child := range c.Children {
+		if child == nil {
+			continue
+		}
 
-			child.SetDirty(false)
-			child.SetEncodingAndHash(enc, hash)
+		hash := child.GetHash()
+		enc, err := db.Get(hash)
+		if err != nil {
+			return fmt.Errorf("failed to find node key=%x index=%d: %w", hash, i, err)
+		}
 
-			c.Children[i] = child
-			err = t.load(db, child)
-			if err != nil {
-				return err
-			}
+		child, err = decodeNode(bytes.NewBuffer(enc))
+		if err != nil {
+			return err
+		}
+
+		child.SetDirty(false)
+		child.SetEncodingAndHash(enc, hash)
+
+		c.Children[i] = child
+		err = t.load(db, child)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -186,21 +197,27 @@ func (t *Trie) load(db chaindb.Database, curr node.Node) error {
 
 // GetNodeHashes return hash of each key of the trie.
 func (t *Trie) GetNodeHashes(curr node.Node, keys map[common.Hash]struct{}) error {
-	if c, ok := curr.(*branch.Branch); ok {
-		for _, child := range c.Children {
-			if child == nil {
-				continue
-			}
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+	default:
+		return nil
+	}
 
-			hash := child.GetHash()
-			keys[common.BytesToHash(hash)] = struct{}{}
+	c := curr.(*branch.Branch)
+	for _, child := range c.Children {
+		if child == nil {
+			continue
+		}
 
-			err := t.GetNodeHashes(child, keys)
-			if err != nil {
-				return err
-			}
+		hash := child.GetHash()
+		keys[common.BytesToHash(hash)] = struct{}{}
+
+		err := t.GetNodeHashes(child, keys)
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
@@ -337,20 +354,26 @@ func (t *Trie) writeDirty(db chaindb.Batch, curr node.Node) error {
 		return err
 	}
 
-	if c, ok := curr.(*branch.Branch); ok {
-		for _, child := range c.Children {
-			if child == nil {
-				continue
-			}
+	curr.SetDirty(false)
 
-			err = t.writeDirty(db, child)
-			if err != nil {
-				return err
-			}
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+	default: // not a branch
+		return nil
+	}
+
+	c := curr.(*branch.Branch)
+	for _, child := range c.Children {
+		if child == nil {
+			continue
+		}
+
+		err = t.writeDirty(db, child)
+		if err != nil {
+			return err
 		}
 	}
 
-	curr.SetDirty(false)
 	return nil
 }
 
@@ -383,17 +406,22 @@ func (t *Trie) getInsertedNodeHashes(curr node.Node) ([]common.Hash, error) {
 	nodeHash := common.BytesToHash(hash)
 	nodeHashes = append(nodeHashes, nodeHash)
 
-	if c, ok := curr.(*branch.Branch); ok {
-		for _, child := range c.Children {
-			if child == nil {
-				continue
-			}
-			nodes, err := t.getInsertedNodeHashes(child)
-			if err != nil {
-				return nil, err
-			}
-			nodeHashes = append(nodeHashes, nodes...)
+	switch curr.Type() {
+	case node.BranchType, node.BranchWithValueType:
+	default: // not a branch
+		return nodeHashes, nil
+	}
+
+	c := curr.(*branch.Branch)
+	for _, child := range c.Children {
+		if child == nil {
+			continue
 		}
+		nodes, err := t.getInsertedNodeHashes(child)
+		if err != nil {
+			return nil, err
+		}
+		nodeHashes = append(nodeHashes, nodes...)
 	}
 
 	return nodeHashes, nil
